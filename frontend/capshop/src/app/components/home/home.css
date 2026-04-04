@@ -1,0 +1,32 @@
+.home-page {
+  min-height: 100vh;
+}
+
+.cat-icon-box {
+  background: #f5f5f7;
+}
+
+.cat-name {
+  color: #1d1d1f;
+}
+
+.cat-desc {
+  color: #86868b;
+}
+
+/* Dark theme */
+body.dark-theme .cat-icon-box {
+  background: #2c2c2e !important;
+}
+
+body.dark-theme .cat-name {
+  color: #f5f5f7 !important;
+}
+
+body.dark-theme .cat-desc {
+  color: #aeaeb2 !important;
+}
+
+body.dark-theme .card {
+  background: #1c1c1e !important;
+}

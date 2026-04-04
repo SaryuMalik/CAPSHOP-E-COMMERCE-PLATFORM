@@ -1,0 +1,5 @@
+.orders-page { min-height: 100vh; }
+
+body.dark-theme .border {
+  border-color: #2c2c2e !important;
+}

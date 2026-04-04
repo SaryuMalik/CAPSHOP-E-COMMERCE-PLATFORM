@@ -1,0 +1,9 @@
+.cart-page { min-height: 100vh; }
+
+body.dark-theme table thead {
+  background: #1c1c1e !important;
+}
+
+body.dark-theme .table-hover tbody tr:hover td {
+  background: #2c2c2e !important;
+}

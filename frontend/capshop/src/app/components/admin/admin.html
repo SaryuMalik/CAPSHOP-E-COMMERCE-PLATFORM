@@ -1,0 +1,235 @@
+<div class="admin-page py-4">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+      <div>
+        <h1 class="fw-bold mb-1" style="font-size:28px;">Admin Panel</h1>
+        <p class="text-secondary mb-0" style="font-size:14px;">Manage your store</p>
+      </div>
+      <div class="d-flex gap-3">
+        <div class="card rounded-3 border-0 shadow-sm px-4 py-2 text-center">
+          <div class="fw-bold text-primary" style="font-size:22px;">{{ products.length }}</div>
+          <div class="text-secondary" style="font-size:11px; text-transform:uppercase;">Products</div>
+        </div>
+        <div class="card rounded-3 border-0 shadow-sm px-4 py-2 text-center">
+          <div class="fw-bold text-primary" style="font-size:22px;">{{ orders.length }}</div>
+          <div class="text-secondary" style="font-size:11px; text-transform:uppercase;">Orders</div>
+        </div>
+        <div class="card rounded-3 border-0 shadow-sm px-4 py-2 text-center">
+          <div class="fw-bold text-success" style="font-size:22px;">${{ getTotalRevenue() | number:'1.0-0' }}</div>
+          <div class="text-secondary" style="font-size:11px; text-transform:uppercase;">Revenue</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4 border-bottom">
+      <li class="nav-item">
+        <button class="nav-link fw-semibold" [class.active]="activeTab === 'products'"
+                (click)="setTab('products')">
+          📦 Products
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link fw-semibold" [class.active]="activeTab === 'orders'"
+                (click)="setTab('orders')">
+          🛒 Orders
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link fw-semibold" [class.active]="activeTab === 'add'"
+                (click)="setTab('add')">
+          ➕ {{ editingProduct ? 'Edit Product' : 'Add Product' }}
+        </button>
+      </li>
+    </ul>
+
+    <!-- Products Tab -->
+    <div *ngIf="activeTab === 'products'">
+      <div class="text-center py-4" *ngIf="loadingProducts">
+        <div class="spinner-border text-primary"></div>
+      </div>
+      <div class="card rounded-4 border-0 shadow-sm overflow-hidden" *ngIf="!loadingProducts">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead style="background:#f5f5f7;">
+              <tr>
+                <th class="py-3 px-4">ID</th>
+                <th class="py-3">Product</th>
+                <th class="py-3">Category</th>
+                <th class="py-3">Price</th>
+                <th class="py-3">Stock</th>
+                <th class="py-3">Status</th>
+                <th class="py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let product of products">
+                <td class="py-3 px-4 text-secondary">#{{ product.id }}</td>
+                <td class="py-3">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-2 d-flex align-items-center justify-content-center"
+                         style="width:36px; height:36px; background:#f5f5f7; font-size:18px;">
+                      {{ getProductEmoji(product.name) }}
+                    </div>
+                    <div>
+                      <div class="fw-semibold" style="font-size:13px;">{{ product.name }}</div>
+                      <div class="text-secondary" style="font-size:11px;">
+                        {{ product.description | slice:0:35 }}...
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3">
+                  <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">
+                    {{ product.categoryName }}
+                  </span>
+                </td>
+                <td class="py-3 fw-semibold">₹{{ product.price }}</td>
+                <td class="py-3">
+                  <span [class.text-warning]="product.stock < 10 && product.stock > 0"
+                        [class.text-danger]="product.stock === 0"
+                        [class.fw-semibold]="product.stock < 10">
+                    {{ product.stock }}
+                  </span>
+                </td>
+                <td class="py-3">
+                  <span class="badge rounded-pill px-3"
+                        [class.bg-success]="product.isActive"
+                        [class.bg-secondary]="!product.isActive">
+                    {{ product.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="py-3">
+                  <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-primary" (click)="editProduct(product)">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" (click)="deleteProduct(product.id)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders Tab -->
+    <div *ngIf="activeTab === 'orders'">
+      <div class="text-center py-4" *ngIf="loadingOrders">
+        <div class="spinner-border text-primary"></div>
+      </div>
+      <div class="card rounded-4 border-0 shadow-sm overflow-hidden" *ngIf="!loadingOrders">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead style="background:#f5f5f7;">
+              <tr>
+                <th class="py-3 px-4">Order ID</th>
+                <th class="py-3">Customer</th>
+                <th class="py-3">Items</th>
+                <th class="py-3">Total</th>
+                <th class="py-3">Status</th>
+                <th class="py-3">Payment</th>
+                <th class="py-3">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let order of orders">
+                <td class="py-3 px-4 text-secondary fw-semibold">#{{ order.id }}</td>
+                <td class="py-3" style="font-size:13px;">{{ order.userEmail }}</td>
+                <td class="py-3 text-secondary">{{ order.items.length }} items</td>
+                <td class="py-3 fw-bold">₹{{ order.totalAmount }}</td>
+                <td class="py-3">
+                  <select class="form-select form-select-sm rounded-3"
+                          style="width:130px;"
+                          (change)="updateStatus(order.id, $event, 'status')">
+                    <option value="Pending" [selected]="order.status === 'Pending'">Pending</option>
+                    <option value="Processing" [selected]="order.status === 'Processing'">Processing</option>
+                    <option value="Shipped" [selected]="order.status === 'Shipped'">Shipped</option>
+                    <option value="Delivered" [selected]="order.status === 'Delivered'">Delivered</option>
+                  </select>
+                </td>
+                <td class="py-3">
+                  <select class="form-select form-select-sm rounded-3"
+                          style="width:110px;"
+                          (change)="updateStatus(order.id, $event, 'payment')">
+                    <option value="Unpaid" [selected]="order.paymentStatus === 'Unpaid'">Unpaid</option>
+                    <option value="Paid" [selected]="order.paymentStatus === 'Paid'">Paid</option>
+                  </select>
+                </td>
+                <td class="py-3 text-secondary" style="font-size:13px;">
+                  {{ order.orderDate | date:'MMM d, y' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add/Edit Tab -->
+    <div *ngIf="activeTab === 'add'">
+      <div class="card rounded-4 border-0 shadow-sm p-4">
+        <h5 class="fw-bold mb-4">{{ editingProduct ? 'Edit Product' : 'Add New Product' }}</h5>
+        <form (ngSubmit)="saveProduct()">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" style="font-size:13px;">Product Name *</label>
+              <input type="text" class="form-control" [(ngModel)]="productForm.name"
+                     name="name" placeholder="Enter product name" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" style="font-size:13px;">Category *</label>
+              <select class="form-select" [(ngModel)]="productForm.categoryId" name="categoryId">
+                <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" style="font-size:13px;">Price *</label>
+              <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input type="number" class="form-control" [(ngModel)]="productForm.price"
+                       name="price" placeholder="0.00" required />
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold" style="font-size:13px;">Stock *</label>
+              <input type="number" class="form-control" [(ngModel)]="productForm.stock"
+                     name="stock" placeholder="0" required />
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold" style="font-size:13px;">Description</label>
+              <textarea class="form-control" rows="3" [(ngModel)]="productForm.description"
+                        name="description" placeholder="Product description..."></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold" style="font-size:13px;">Image URL</label>
+              <input type="text" class="form-control" [(ngModel)]="productForm.imageUrl"
+                     name="imageUrl" placeholder="https://..." />
+            </div>
+          </div>
+
+          <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-primary px-4">
+              {{ editingProduct ? 'Update Product' : 'Add Product' }}
+            </button>
+            <button type="button" class="btn btn-outline-danger" *ngIf="editingProduct"
+                    (click)="cancelEdit()">
+              Cancel
+            </button>
+          </div>
+
+          <div class="alert alert-success mt-3 py-2" *ngIf="formSuccess"
+               style="font-size:13px; border-radius:10px;">✅ {{ formSuccess }}</div>
+          <div class="alert alert-danger mt-3 py-2" *ngIf="formError"
+               style="font-size:13px; border-radius:10px;">⚠️ {{ formError }}</div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>

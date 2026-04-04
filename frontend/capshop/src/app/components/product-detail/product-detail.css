@@ -1,0 +1,9 @@
+body.dark-theme .card[style*="background:#f5f5f7"] {
+  background: #2c2c2e !important;
+}
+
+body.dark-theme .btn-light {
+  background: #2c2c2e !important;
+  border-color: #3a3a3c !important;
+  color: #f5f5f7 !important;
+}

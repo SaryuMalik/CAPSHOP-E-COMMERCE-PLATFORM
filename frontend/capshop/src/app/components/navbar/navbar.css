@@ -1,0 +1,10 @@
+.nav-link {
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+
+.navbar-brand {
+  letter-spacing: -0.5px;
+}
