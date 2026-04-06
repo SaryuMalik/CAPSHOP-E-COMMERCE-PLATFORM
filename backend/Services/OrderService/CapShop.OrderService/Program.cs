@@ -7,7 +7,12 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler =
+            System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 
 builder.Services.AddDbContext<OrderDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -52,6 +57,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Auto Migration
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+    db.Database.Migrate();
+}
 
 if (app.Environment.IsDevelopment())
 {

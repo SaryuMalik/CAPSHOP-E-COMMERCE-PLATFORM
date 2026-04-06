@@ -5,6 +5,7 @@ import { Register } from './components/register/register';
 import { Products } from './components/products/products';
 import { ProductDetail } from './components/product-detail/product-detail';
 import { Cart } from './components/cart/cart';
+import { Checkout } from './components/checkout/checkout';
 import { Orders } from './components/orders/orders';
 import { authGuard } from './guards/auth.guard';
 import { Admin } from './components/admin/admin';
@@ -18,9 +19,10 @@ export const routes: Routes = [
   { path: 'products', component: Products },
   { path: 'products/:id', component: ProductDetail },
   { path: 'forgot-password', component: ForgotPassword },
-{ path: 'reset-password', component: ResetPassword },
+  { path: 'reset-password', component: ResetPassword },
   { path: 'admin', component: Admin, canActivate: [authGuard] },
   { path: 'cart', component: Cart, canActivate: [authGuard] },
+  { path: 'checkout', component: Checkout, canActivate: [authGuard] },
   { path: 'orders', component: Orders, canActivate: [authGuard] },
   { path: '**', redirectTo: '' }
 ];

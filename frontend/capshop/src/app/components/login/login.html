@@ -1,76 +1,87 @@
-<div class="min-vh-100 d-flex align-items-center justify-content-center py-4"
-     style="background:#f5f5f7;">
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-md-10 col-lg-8">
-        <div class="card rounded-4 overflow-hidden border-0 shadow-sm">
-          <div class="row g-0">
+<div class="auth-page">
+  <div class="auth-container">
 
-            <!-- Left -->
-            <div class="col-md-5 d-none d-md-flex flex-column justify-content-center p-5"
-                 style="background:#0071e3;">
-              <a routerLink="/" class="text-white fw-bold mb-4 d-block" style="font-size:20px;">
-                CapShop
-              </a>
-              <h2 class="text-white fw-bold mb-3">Welcome back!</h2>
-              <p class="text-white opacity-75 mb-4">Sign in to access your orders, cart and exclusive deals.</p>
-              <div class="d-flex flex-column gap-2">
-                <div class="text-white opacity-75 d-flex align-items-center gap-2">
-                  <i class="bi bi-check-circle-fill"></i> Track your orders
-                </div>
-                <div class="text-white opacity-75 d-flex align-items-center gap-2">
-                  <i class="bi bi-check-circle-fill"></i> Save your cart
-                </div>
-                <div class="text-white opacity-75 d-flex align-items-center gap-2">
-                  <i class="bi bi-check-circle-fill"></i> Exclusive deals
-                </div>
-              </div>
-            </div>
-
-            <!-- Right -->
-            <div class="col-md-7 p-4 p-md-5">
-              <h3 class="fw-bold mb-1">Sign In</h3>
-              <p class="text-secondary mb-4" style="font-size:14px;">
-                Don't have an account?
-                <a routerLink="/register" class="text-primary fw-semibold">Register</a>
-              </p>
-
-              <form (ngSubmit)="onLogin()">
-                <div class="mb-3">
-                  <label class="form-label fw-semibold" style="font-size:13px;">Email Address</label>
-                  <input type="email" class="form-control"
-                         [(ngModel)]="email" name="email"
-                         placeholder="you@example.com" required />
-                </div>
-                <div class="mb-3">
-                  <label class="form-label fw-semibold" style="font-size:13px;">Password</label>
-                  <input type="password" class="form-control"
-                         [(ngModel)]="password" name="password"
-                         placeholder="••••••••" required />
-                </div>
-
-                <div class="alert alert-danger py-2 d-flex align-items-center gap-2"
-                     *ngIf="errorMsg" style="font-size:13px; border-radius:10px;">
-                  <i class="bi bi-exclamation-circle"></i> {{ errorMsg }}
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100 py-2 mt-2" [disabled]="loading">
-                  {{ loading ? 'Signing in...' : 'Sign In' }}
-                </button>
-                 <div class="d-flex justify-content-end mb-3">
-  <a routerLink="/forgot-password" class="text-primary" style="font-size:13px;">
-    Forgot Password?
-  </a>
-</div>
-              </form>
-              
-            </div>
-
-           
-
+    <!-- Left Panel -->
+    <div class="auth-left">
+      <a routerLink="/" class="auth-brand">
+        <div class="auth-brand-icon"><i class="bi bi-bag-heart-fill"></i></div>
+        <span>CapShop</span>
+      </a>
+      <div class="auth-left-content">
+        <h2 class="auth-left-title">Welcome back!</h2>
+        <p class="auth-left-sub">Sign in to access your orders, cart and exclusive deals.</p>
+        <div class="auth-features">
+          <div class="auth-feature">
+            <div class="auth-feature-icon"><i class="bi bi-box-seam"></i></div>
+            <span>Track your orders in real-time</span>
+          </div>
+          <div class="auth-feature">
+            <div class="auth-feature-icon"><i class="bi bi-bag-heart"></i></div>
+            <span>Save your cart across devices</span>
+          </div>
+          <div class="auth-feature">
+            <div class="auth-feature-icon"><i class="bi bi-tag"></i></div>
+            <span>Exclusive member-only deals</span>
           </div>
         </div>
       </div>
+      <div class="auth-left-footer">
+        Trusted by 50,000+ shoppers
+      </div>
     </div>
+
+    <!-- Right Panel -->
+    <div class="auth-right">
+      <div class="auth-form-wrap">
+        <div class="auth-form-header">
+          <h3 class="auth-form-title">Sign In</h3>
+          <p class="auth-form-sub">
+            Don't have an account?
+            <a routerLink="/register" class="auth-link">Create one free</a>
+          </p>
+        </div>
+
+        <form (ngSubmit)="onLogin()" class="auth-form">
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-envelope input-icon"></i>
+              <input type="email" class="form-control input-with-icon"
+                     [(ngModel)]="email" name="email"
+                     placeholder="you@example.com" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0">Password</label>
+              <a routerLink="/forgot-password" class="auth-link" style="font-size:12px;">
+                Forgot password?
+              </a>
+            </div>
+            <div class="input-icon-wrap">
+              <i class="bi bi-lock input-icon"></i>
+              <input type="password" class="form-control input-with-icon"
+                     [(ngModel)]="password" name="password"
+                     placeholder="••••••••" required />
+            </div>
+          </div>
+
+          <div class="alert alert-danger" *ngIf="errorMsg">
+            <i class="bi bi-exclamation-circle me-2"></i>{{ errorMsg }}
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 auth-submit" [disabled]="loading">
+            <span *ngIf="!loading"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</span>
+            <span *ngIf="loading"><span class="spinner-border spinner-border-sm me-2"></span>Signing in...</span>
+          </button>
+        </form>
+
+        <div class="auth-mobile-link d-md-none">
+          <a routerLink="/" class="auth-link">← Back to Home</a>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>

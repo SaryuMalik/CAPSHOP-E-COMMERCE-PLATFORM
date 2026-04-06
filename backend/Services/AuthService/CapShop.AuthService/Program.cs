@@ -1,3 +1,4 @@
+
 using CapShop.AuthService.Application.Commands;
 using CapShop.AuthService.Application.Interfaces;
 using CapShop.AuthService.Domain.Interfaces;
@@ -59,6 +60,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+
+// Auto Migration
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+    db.Database.Migrate();
+}
 
 if (app.Environment.IsDevelopment())
 {

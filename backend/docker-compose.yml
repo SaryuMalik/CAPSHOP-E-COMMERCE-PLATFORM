@@ -1,0 +1,190 @@
+services:
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      SA_PASSWORD: "${SA_PASSWORD}"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '${SA_PASSWORD}' -Q 'SELECT 1' -C || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - capshop-net
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASS}"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - capshop-net
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - capshop-net
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: Services/AuthService/CapShop.AuthService/Dockerfile
+    container_name: auth-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=CapShopAuth;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
+      - Jwt__ExpiryMinutes=${JWT_EXPIRY_MINUTES}
+      - Email__From=${EMAIL_FROM}
+      - Email__Password=${EMAIL_PASSWORD}
+      - Email__Host=${EMAIL_HOST}
+      - Email__Port=${EMAIL_PORT}
+    ports:
+      - "5014:80"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - capshop-net
+
+  catalog-service:
+    build:
+      context: .
+      dockerfile: Services/CatalogService/CapShop.CatalogService/Dockerfile
+    container_name: catalog-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=CapShopCatalog;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
+      - ConnectionStrings__Redis=redis:6379
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
+    ports:
+      - "5013:80"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - capshop-net
+
+  order-service:
+    build:
+      context: .
+      dockerfile: Services/OrderService/CapShop.OrderService/Dockerfile
+    container_name: order-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=CapShopOrders;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=${RABBITMQ_USER}
+      - RabbitMQ__Password=${RABBITMQ_PASS}
+      - Email__From=${EMAIL_FROM}
+      - Email__Password=${EMAIL_PASSWORD}
+      - Email__Host=${EMAIL_HOST}
+      - Email__Port=${EMAIL_PORT}
+    ports:
+      - "5288:80"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - capshop-net
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: Services/AdminService/CapShop.AdminService/Dockerfile
+    container_name: admin-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
+      - Services__CatalogService=http://catalog-service:80
+      - Services__OrderService=http://order-service:80
+    ports:
+      - "5165:80"
+    depends_on:
+      - catalog-service
+      - order-service
+    networks:
+      - capshop-net
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: NotificationService/CapShop.NotificationService/CapShop.NotificationService/Dockerfile
+    container_name: notification-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=${RABBITMQ_USER}
+      - RabbitMQ__Password=${RABBITMQ_PASS}
+      - Email__From=${EMAIL_FROM}
+      - Email__Password=${EMAIL_PASSWORD}
+      - Email__Host=${EMAIL_HOST}
+      - Email__Port=${EMAIL_PORT}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - capshop-net
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Gateway/CapShop.Gateway/Dockerfile
+    container_name: capshop-gateway
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+    ports:
+      - "5041:80"
+    depends_on:
+      - auth-service
+      - catalog-service
+      - order-service
+      - admin-service
+    networks:
+      - capshop-net
+
+volumes:
+  sqldata:
+
+networks:
+  capshop-net:
+    driver: bridge

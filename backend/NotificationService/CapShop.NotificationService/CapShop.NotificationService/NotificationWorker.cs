@@ -24,36 +24,52 @@ public class NotificationWorker : BackgroundService
     {
         var factory = new ConnectionFactory
         {
-            HostName = _config["RabbitMQ:Host"] ?? "localhost",
+            HostName = _config["RabbitMQ:Host"] ?? "rabbitmq",
             Port = int.TryParse(_config["RabbitMQ:Port"], out var port) ? port : 5672,
             UserName = _config["RabbitMQ:Username"] ?? "guest",
             Password = _config["RabbitMQ:Password"] ?? "guest"
         };
 
-        _connection = await factory.CreateConnectionAsync();
-        _channel = await _connection.CreateChannelAsync();
+        int retries = 10;
+        while (retries > 0)
+        {
+            try
+            {
+                Console.WriteLine($"🔄 Connecting to RabbitMQ at {factory.HostName}...");
+                _connection = await factory.CreateConnectionAsync();
+                _channel = await _connection.CreateChannelAsync();
 
-        await _channel.QueueDeclareAsync(
-            queue: "order-placed",
-            durable: true,
-            exclusive: false,
-            autoDelete: false
-        );
+                await _channel.QueueDeclareAsync(
+                    queue: "order-placed",
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false
+                );
 
-        await _channel.QueueDeclareAsync(
-            queue: "order-status-changed",
-            durable: true,
-            exclusive: false,
-            autoDelete: false
-        );
+                await _channel.QueueDeclareAsync(
+                    queue: "order-status-changed",
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false
+                );
 
-        Console.WriteLine("✅ NotificationService connected to RabbitMQ!");
+                Console.WriteLine("✅ NotificationService connected to RabbitMQ!");
+                break;
+            }
+            catch (Exception ex)
+            {
+                retries--;
+                Console.WriteLine($"⚠️ RabbitMQ not ready. Retries left: {retries}. Waiting 5s... Error: {ex.Message}");
+                if (retries == 0) throw;
+                await Task.Delay(5000, cancellationToken);
+            }
+        }
+
         await base.StartAsync(cancellationToken);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Order placed consumer
         var orderPlacedConsumer = new AsyncEventingBasicConsumer(_channel!);
         orderPlacedConsumer.ReceivedAsync += async (model, ea) =>
         {
@@ -70,7 +86,6 @@ public class NotificationWorker : BackgroundService
             }
         };
 
-        // Order status changed consumer
         var statusChangedConsumer = new AsyncEventingBasicConsumer(_channel!);
         statusChangedConsumer.ReceivedAsync += async (model, ea) =>
         {

@@ -1,0 +1,330 @@
+<div class="checkout-page">
+  <div class="container py-5">
+
+    <!-- Loading -->
+    <div class="loading-state" *ngIf="loading">
+      <div class="spinner-border"></div>
+      <p>Loading checkout...</p>
+    </div>
+
+    <div *ngIf="!loading">
+
+      <!-- ── Step 3: Success ── -->
+      <div class="success-screen" *ngIf="step === 3">
+        <div class="success-icon">
+          <i class="bi bi-check-lg"></i>
+        </div>
+        <h2 class="success-title">Order Placed!</h2>
+        <p class="success-sub">
+          Your order <strong>#{{ orderId }}</strong> has been confirmed.<br>
+          A confirmation email has been sent to <strong>{{ email }}</strong>.
+        </p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap mt-4">
+          <a routerLink="/orders" class="btn btn-primary btn-lg px-5">
+            <i class="bi bi-box-seam me-2"></i>Track Order
+          </a>
+          <a routerLink="/products" class="btn btn-outline-secondary btn-lg px-5">
+            Continue Shopping
+          </a>
+        </div>
+      </div>
+
+      <!-- ── Main Checkout Layout ── -->
+      <div *ngIf="step !== 3">
+
+        <!-- Progress Bar -->
+        <div class="checkout-progress">
+          <div class="progress-step" [class.active]="step >= 1" [class.done]="step > 1">
+            <div class="progress-dot">
+              <i class="bi bi-check" *ngIf="step > 1"></i>
+              <span *ngIf="step <= 1">1</span>
+            </div>
+            <span class="progress-label">Shipping</span>
+          </div>
+          <div class="progress-line" [class.done]="step > 1"></div>
+          <div class="progress-step" [class.active]="step >= 2">
+            <div class="progress-dot">
+              <span>2</span>
+            </div>
+            <span class="progress-label">Payment</span>
+          </div>
+          <div class="progress-line"></div>
+          <div class="progress-step">
+            <div class="progress-dot"><span>3</span></div>
+            <span class="progress-label">Confirm</span>
+          </div>
+        </div>
+
+        <div class="row g-4 mt-2">
+
+          <!-- ── Left: Forms ── -->
+          <div class="col-lg-7">
+
+            <!-- Step 1: Shipping -->
+            <div class="checkout-card" *ngIf="step === 1">
+              <div class="checkout-card-header">
+                <div class="checkout-card-icon"><i class="bi bi-geo-alt-fill"></i></div>
+                <div>
+                  <h5 class="checkout-card-title">Shipping Information</h5>
+                  <p class="checkout-card-sub">Where should we deliver your order?</p>
+                </div>
+              </div>
+
+              <div class="row g-3">
+                <div class="col-6">
+                  <label class="form-label">First Name *</label>
+                  <input type="text" class="form-control" [(ngModel)]="firstName" placeholder="John" />
+                </div>
+                <div class="col-6">
+                  <label class="form-label">Last Name *</label>
+                  <input type="text" class="form-control" [(ngModel)]="lastName" placeholder="Doe" />
+                </div>
+                <div class="col-6">
+                  <label class="form-label">Email *</label>
+                  <input type="email" class="form-control" [(ngModel)]="email" placeholder="you@example.com" />
+                </div>
+                <div class="col-6">
+                  <label class="form-label">Phone</label>
+                  <input type="tel" class="form-control" [(ngModel)]="phone" placeholder="+91 98765 43210" />
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Street Address *</label>
+                  <input type="text" class="form-control" [(ngModel)]="address"
+                         placeholder="House no., Street, Area" />
+                </div>
+                <div class="col-5">
+                  <label class="form-label">City *</label>
+                  <input type="text" class="form-control" [(ngModel)]="city" placeholder="Mumbai" />
+                </div>
+                <div class="col-4">
+                  <label class="form-label">State</label>
+                  <input type="text" class="form-control" [(ngModel)]="state" placeholder="Maharashtra" />
+                </div>
+                <div class="col-3">
+                  <label class="form-label">Pincode *</label>
+                  <input type="text" class="form-control" [(ngModel)]="pincode" placeholder="400001" maxlength="6" />
+                </div>
+              </div>
+
+              <div class="alert alert-danger mt-3" *ngIf="errorMsg">
+                <i class="bi bi-exclamation-circle me-2"></i>{{ errorMsg }}
+              </div>
+
+              <button class="btn btn-primary w-100 mt-4 checkout-btn" (click)="proceedToPayment()">
+                Continue to Payment <i class="bi bi-arrow-right ms-2"></i>
+              </button>
+            </div>
+
+            <!-- Step 2: Payment -->
+            <div class="checkout-card" *ngIf="step === 2">
+              <div class="checkout-card-header">
+                <div class="checkout-card-icon"><i class="bi bi-credit-card-fill"></i></div>
+                <div>
+                  <h5 class="checkout-card-title">Payment Method</h5>
+                  <p class="checkout-card-sub">All transactions are secure and encrypted</p>
+                </div>
+              </div>
+
+              <!-- Payment Method Tabs -->
+              <div class="payment-tabs">
+                <button class="payment-tab" [class.active]="paymentMethod === 'card'"
+                        (click)="paymentMethod = 'card'">
+                  <i class="bi bi-credit-card me-2"></i>Credit / Debit Card
+                </button>
+                <button class="payment-tab" [class.active]="paymentMethod === 'upi'"
+                        (click)="paymentMethod = 'upi'">
+                  <i class="bi bi-phone me-2"></i>UPI
+                </button>
+                <button class="payment-tab" [class.active]="paymentMethod === 'cod'"
+                        (click)="paymentMethod = 'cod'">
+                  <i class="bi bi-cash-coin me-2"></i>Cash on Delivery
+                </button>
+              </div>
+
+              <!-- Card Form -->
+              <div class="payment-form" *ngIf="paymentMethod === 'card'">
+                <div class="card-preview">
+                  <div class="card-preview-chip"></div>
+                  <div class="card-preview-number">
+                    {{ cardNumber || '•••• •••• •••• ••••' }}
+                  </div>
+                  <div class="card-preview-bottom">
+                    <div>
+                      <div class="card-preview-label">Card Holder</div>
+                      <div class="card-preview-value">{{ cardName || 'YOUR NAME' }}</div>
+                    </div>
+                    <div>
+                      <div class="card-preview-label">Expires</div>
+                      <div class="card-preview-value">{{ cardExpiry || 'MM/YY' }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                  <div class="col-12">
+                    <label class="form-label">Card Number *</label>
+                    <div class="input-icon-wrap">
+                      <i class="bi bi-credit-card input-icon"></i>
+                      <input type="text" class="form-control input-with-icon"
+                             [value]="cardNumber"
+                             (input)="onCardInput($event)"
+                             placeholder="1234 5678 9012 3456"
+                             maxlength="19" />
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Name on Card *</label>
+                    <input type="text" class="form-control" [(ngModel)]="cardName"
+                           placeholder="John Doe" />
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label">Expiry Date *</label>
+                    <input type="text" class="form-control"
+                           [value]="cardExpiry"
+                           (input)="onExpiryInput($event)"
+                           placeholder="MM/YY" maxlength="5" />
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label">CVV *</label>
+                    <div class="input-icon-wrap">
+                      <i class="bi bi-lock input-icon"></i>
+                      <input type="password" class="form-control input-with-icon"
+                             [(ngModel)]="cardCvv"
+                             placeholder="•••" maxlength="4" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="secure-badge">
+                  <i class="bi bi-shield-lock-fill text-success me-2"></i>
+                  Your card details are encrypted with 256-bit SSL
+                </div>
+              </div>
+
+              <!-- UPI Form -->
+              <div class="payment-form" *ngIf="paymentMethod === 'upi'">
+                <div class="upi-logos">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/UPI-Logo-vector.svg/200px-UPI-Logo-vector.svg.png"
+                       alt="UPI" height="32" />
+                </div>
+                <label class="form-label mt-3">UPI ID *</label>
+                <div class="input-icon-wrap">
+                  <i class="bi bi-at input-icon"></i>
+                  <input type="text" class="form-control input-with-icon"
+                         [(ngModel)]="upiId"
+                         placeholder="yourname@upi" />
+                </div>
+                <p class="upi-hint">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Enter your UPI ID (e.g. name@okaxis, name@paytm)
+                </p>
+              </div>
+
+              <!-- COD -->
+              <div class="payment-form" *ngIf="paymentMethod === 'cod'">
+                <div class="cod-info">
+                  <div class="cod-icon"><i class="bi bi-cash-coin"></i></div>
+                  <div>
+                    <div class="cod-title">Cash on Delivery</div>
+                    <div class="cod-sub">Pay when your order arrives at your doorstep. No extra charges.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="alert alert-danger mt-3" *ngIf="errorMsg">
+                <i class="bi bi-exclamation-circle me-2"></i>{{ errorMsg }}
+              </div>
+
+              <div class="d-flex gap-3 mt-4">
+                <button class="btn btn-outline-secondary flex-shrink-0" (click)="step = 1; errorMsg = ''">
+                  <i class="bi bi-arrow-left me-1"></i>Back
+                </button>
+                <button class="btn btn-primary w-100 checkout-btn" (click)="placeOrder()" [disabled]="placing">
+                  <span *ngIf="!placing">
+                    <i class="bi bi-bag-check me-2"></i>
+                    Pay ₹{{ getGrandTotal() | number:'1.2-2' }}
+                  </span>
+                  <span *ngIf="placing">
+                    <span class="spinner-border spinner-border-sm me-2"></span>Processing...
+                  </span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ── Right: Order Summary ── -->
+          <div class="col-lg-5">
+            <div class="summary-card card p-4">
+              <h5 class="summary-title">Order Summary</h5>
+
+              <div class="summary-items">
+                <div class="summary-item" *ngFor="let item of cartItems">
+                  <div class="summary-item-info">
+                    <span class="summary-item-qty">{{ item.quantity }}×</span>
+                    <span class="summary-item-name">{{ item.productName }}</span>
+                  </div>
+                  <span class="summary-item-price">₹{{ (item.productPrice * item.quantity) | number:'1.2-2' }}</span>
+                </div>
+              </div>
+
+              <div class="summary-divider"></div>
+
+              <div class="summary-row">
+                <span>Subtotal</span>
+                <span>₹{{ getTotal() | number:'1.2-2' }}</span>
+              </div>
+              <div class="summary-row">
+                <span>Shipping</span>
+                <span class="text-success fw-semibold" *ngIf="getShipping() === 0">FREE</span>
+                <span *ngIf="getShipping() > 0">₹{{ getShipping() }}</span>
+              </div>
+              <div class="summary-row text-muted" style="font-size:12px;" *ngIf="getShipping() > 0">
+                <span>Add ₹{{ 499 - getTotal() | number:'1.0-0' }} more for free shipping</span>
+              </div>
+
+              <div class="summary-divider"></div>
+
+              <div class="summary-total">
+                <span>Total</span>
+                <span>₹{{ getGrandTotal() | number:'1.2-2' }}</span>
+              </div>
+
+              <!-- Shipping address preview (step 2) -->
+              <div class="shipping-preview" *ngIf="step === 2 && address">
+                <div class="shipping-preview-label">
+                  <i class="bi bi-geo-alt me-1"></i>Delivering to
+                </div>
+                <div class="shipping-preview-addr">
+                  {{ firstName }} {{ lastName }}<br>
+                  {{ address }}, {{ city }}<br>
+                  {{ state }} - {{ pincode }}
+                </div>
+                <button class="btn btn-link p-0 mt-1" style="font-size:12px;" (click)="step = 1">
+                  Change
+                </button>
+              </div>
+
+              <!-- Trust badges -->
+              <div class="trust-badges">
+                <div class="trust-badge">
+                  <i class="bi bi-shield-check text-success"></i>
+                  <span>Secure Checkout</span>
+                </div>
+                <div class="trust-badge">
+                  <i class="bi bi-arrow-counterclockwise text-primary"></i>
+                  <span>Easy Returns</span>
+                </div>
+                <div class="trust-badge">
+                  <i class="bi bi-truck text-primary"></i>
+                  <span>Fast Delivery</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

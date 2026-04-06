@@ -1,4 +1,4 @@
-## .NET
+# ── .NET Build Outputs ────────────────────────────
 bin/
 obj/
 *.user
@@ -6,19 +6,30 @@ obj/
 .vs/
 *.log
 
-## Environment & Secrets
+# ── Secrets & Environment Files ───────────────────
+# Never commit these — use .env.example as template
+.env
+*.env
 appsettings.Development.json
 appsettings.Production.json
-*.env
+appsettings.Staging.json
 
-## Docker
+# ── Docker ────────────────────────────────────────
 docker-compose.override.yml
 
-## Node (Angular)
+# ── Node / Angular ────────────────────────────────
 node_modules/
 dist/
 .angular/
+npm-debug.log*
+yarn-error.log*
 
-## OS
+# ── OS ────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# ── IDE ───────────────────────────────────────────
+.idea/
+*.swp
+*.swo

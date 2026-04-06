@@ -6,84 +6,118 @@ namespace CapShop.OrderService.Services;
 
 public class RabbitMQService : IRabbitMQService, IDisposable
 {
-    private readonly IConnection _connection;
-    private readonly IChannel _channel;
+    private IConnection? _connection;
+    private IChannel? _channel;
+    private bool _isConnected = false;
 
-    public RabbitMQService()
+    public RabbitMQService(IConfiguration configuration)
     {
-        var factory = new ConnectionFactory
+        try
         {
-            HostName = "localhost",
-            Port = 5672,
-            UserName = "guest",
-            Password = "guest"
-        };
+            var host = configuration["RabbitMQ:Host"] ?? "localhost";
+            var port = int.Parse(configuration["RabbitMQ:Port"] ?? "5672");
+            var username = configuration["RabbitMQ:Username"] ?? "guest";
+            var password = configuration["RabbitMQ:Password"] ?? "guest";
 
-        _connection = factory.CreateConnectionAsync().GetAwaiter().GetResult();
-        _channel = _connection.CreateChannelAsync().GetAwaiter().GetResult();
+            var factory = new ConnectionFactory
+            {
+                HostName = host,
+                Port = port,
+                UserName = username,
+                Password = password
+            };
 
-        // Queues declare karo
-        _channel.QueueDeclareAsync(
-            queue: "order-placed",
-            durable: true,
-            exclusive: false,
-            autoDelete: false
-        ).GetAwaiter().GetResult();
+            _connection = factory.CreateConnectionAsync().GetAwaiter().GetResult();
+            _channel = _connection.CreateChannelAsync().GetAwaiter().GetResult();
 
-        _channel.QueueDeclareAsync(
-            queue: "order-status-changed",
-            durable: true,
-            exclusive: false,
-            autoDelete: false
-        ).GetAwaiter().GetResult();
+            _channel.QueueDeclareAsync(
+                queue: "order-placed",
+                durable: true,
+                exclusive: false,
+                autoDelete: false
+            ).GetAwaiter().GetResult();
+
+            _channel.QueueDeclareAsync(
+                queue: "order-status-changed",
+                durable: true,
+                exclusive: false,
+                autoDelete: false
+            ).GetAwaiter().GetResult();
+
+            _isConnected = true;
+            Console.WriteLine($"✅ RabbitMQ connected to {host}:{port}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ RabbitMQ connection failed: {ex.Message}. Orders will work without messaging.");
+            _isConnected = false;
+        }
     }
 
     public void PublishOrderPlaced(int orderId, string userEmail, string userName, decimal totalAmount, string shippingAddress)
     {
-        var message = JsonSerializer.Serialize(new
+        if (!_isConnected || _channel == null)
         {
-            OrderId = orderId,
-            UserEmail = userEmail,
-            UserName = userName,
-            TotalAmount = totalAmount,
-            ShippingAddress = shippingAddress
-        });
+            Console.WriteLine("⚠️ RabbitMQ not connected, skipping publish.");
+            return;
+        }
 
-        var body = Encoding.UTF8.GetBytes(message);
+        try
+        {
+            var message = JsonSerializer.Serialize(new
+            {
+                OrderId = orderId,
+                UserEmail = userEmail,
+                UserName = userName,
+                TotalAmount = totalAmount,
+                ShippingAddress = shippingAddress
+            });
 
-        _channel.BasicPublishAsync(
-            exchange: "",
-            routingKey: "order-placed",
-            body: body
-        ).GetAwaiter().GetResult();
+            var body = Encoding.UTF8.GetBytes(message);
+            _channel.BasicPublishAsync(exchange: "", routingKey: "order-placed", body: body)
+                    .GetAwaiter().GetResult();
 
-        Console.WriteLine($"✅ RabbitMQ: Order #{orderId} message published!");
+            Console.WriteLine($"✅ RabbitMQ: Order #{orderId} published!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ RabbitMQ publish failed: {ex.Message}");
+        }
     }
 
     public void PublishOrderStatusChanged(int orderId, string userEmail, string status, string paymentStatus)
     {
-        var message = JsonSerializer.Serialize(new
+        if (!_isConnected || _channel == null)
         {
-            OrderId = orderId,
-            UserEmail = userEmail,
-            Status = status,
-            PaymentStatus = paymentStatus
-        });
+            Console.WriteLine("⚠️ RabbitMQ not connected, skipping publish.");
+            return;
+        }
 
-        var body = Encoding.UTF8.GetBytes(message);
+        try
+        {
+            var message = JsonSerializer.Serialize(new
+            {
+                OrderId = orderId,
+                UserEmail = userEmail,
+                Status = status,
+                PaymentStatus = paymentStatus
+            });
 
-        _channel.BasicPublishAsync(
-            exchange: "",
-            routingKey: "order-status-changed",
-            body: body
-        ).GetAwaiter().GetResult();
+            var body = Encoding.UTF8.GetBytes(message);
+            _channel.BasicPublishAsync(exchange: "", routingKey: "order-status-changed", body: body)
+                    .GetAwaiter().GetResult();
 
-        Console.WriteLine($"✅ RabbitMQ: Order #{orderId} status change published!");
+            Console.WriteLine($"✅ RabbitMQ: Order #{orderId} status published!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ RabbitMQ publish failed: {ex.Message}");
+        }
     }
 
     public void Dispose()
     {
-        _channel?.CloseAsync().GetAwaiter().GetResult();
-        _connection?.CloseAsync().GetAwaiter().GetResult();
+        try { _channel?.CloseAsync().GetAwaiter().GetResult(); } catch { }
+        try { _connection?.CloseAsync().GetAwaiter().GetResult(); } catch { }
     }
 }

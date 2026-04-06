@@ -16,6 +16,7 @@ export class Home implements OnInit {
   featuredProducts: Product[] = [];
   categories: Category[] = [];
   toastMsg = '';
+  isLoggedIn = false;
 
   constructor(
     private productService: ProductService,
@@ -26,6 +27,7 @@ export class Home implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.isLoggedIn = this.authService.isLoggedIn();
     this.productService.getProducts(1, 8).subscribe({  // ✅ page=1, pageSize=8
       next: (res) => {
         this.featuredProducts = [...(res.data || res).slice(0, 8)];  // ✅ data extract

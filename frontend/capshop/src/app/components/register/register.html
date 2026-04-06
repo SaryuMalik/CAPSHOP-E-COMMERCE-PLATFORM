@@ -1,129 +1,123 @@
-<div class="min-vh-100 d-flex align-items-center justify-content-center py-4"
-     style="background:#f5f5f7;">
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-md-10 col-lg-8">
-        <div class="card rounded-4 overflow-hidden border-0 shadow-sm">
-          <div class="row g-0">
+<div class="auth-page">
+  <div class="auth-container">
 
-            <!-- Left -->
-            <div class="col-md-5 d-none d-md-flex flex-column justify-content-center p-5"
-                 style="background:#0071e3;">
-              <a routerLink="/" class="text-white fw-bold mb-4 d-block" style="font-size:20px;">
-                CapShop
-              </a>
-              <h2 class="text-white fw-bold mb-3">Join CapShop!</h2>
-              <p class="text-white opacity-75 mb-4">Create your free account and start shopping today.</p>
-              <div class="d-flex flex-column gap-2">
-                <div class="text-white opacity-75 d-flex align-items-center gap-2">
-                  <i class="bi bi-check-circle-fill"></i> Free account forever
-                </div>
-                <div class="text-white opacity-75 d-flex align-items-center gap-2">
-                  <i class="bi bi-check-circle-fill"></i> Exclusive member deals
-                </div>
-                <div class="text-white opacity-75 d-flex align-items-center gap-2">
-                  <i class="bi bi-check-circle-fill"></i> Fast & secure checkout
-                </div>
-                <div class="text-white opacity-75 d-flex align-items-center gap-2">
-                  <i class="bi bi-check-circle-fill"></i> Order tracking
-                </div>
-              </div>
-            </div>
-
-            <!-- Right -->
-            <div class="col-md-7 p-4 p-md-5">
-              <h3 class="fw-bold mb-1">Create Account</h3>
-              <p class="text-secondary mb-4" style="font-size:14px;">
-                Already have an account?
-                <a routerLink="/login" class="text-primary fw-semibold">Sign In</a>
-              </p>
-
-              <form (ngSubmit)="onRegister()">
-
-                <!-- Name Row -->
-                <div class="row g-3 mb-3">
-                  <div class="col-6">
-                    <label class="form-label fw-semibold" style="font-size:13px;">First Name</label>
-                    <input type="text" class="form-control"
-                           [(ngModel)]="firstName" name="firstName"
-                           placeholder="John" required />
-                  </div>
-                  <div class="col-6">
-                    <label class="form-label fw-semibold" style="font-size:13px;">Last Name</label>
-                    <input type="text" class="form-control"
-                           [(ngModel)]="lastName" name="lastName"
-                           placeholder="Doe" required />
-                  </div>
-                </div>
-
-                <!-- Email -->
-                <div class="mb-3">
-                  <label class="form-label fw-semibold" style="font-size:13px;">Email Address</label>
-                  <input type="email" class="form-control"
-                         [(ngModel)]="email" name="email"
-                         placeholder="you@example.com" required />
-                </div>
-
-                <!-- Password -->
-<div class="mb-3">
-  <label class="form-label fw-semibold" style="font-size:13px;">Password</label>
-  <div class="input-group">
-    <input [type]="showPassword ? 'text' : 'password'" class="form-control"
-           [(ngModel)]="password" name="password"
-           placeholder="Min 6 characters" required />
-    <button class="btn btn-outline-secondary" type="button"
-            (click)="showPassword = !showPassword">
-      <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
-    </button>
-  </div>
-</div>
-
-<!-- Confirm Password -->
-<div class="mb-3">
-  <label class="form-label fw-semibold" style="font-size:13px;">Confirm Password</label>
-  <div class="input-group">
-    <input [type]="showConfirmPassword ? 'text' : 'password'" class="form-control"
-           [(ngModel)]="confirmPassword" name="confirmPassword"
-           placeholder="Re-enter password" required
-           [class.is-invalid]="confirmPassword && password !== confirmPassword"
-           [class.is-valid]="confirmPassword && password === confirmPassword" />
-    <button class="btn btn-outline-secondary" type="button"
-            (click)="showConfirmPassword = !showConfirmPassword">
-      <i class="bi" [class.bi-eye]="!showConfirmPassword" [class.bi-eye-slash]="showConfirmPassword"></i>
-    </button>
-    <div class="invalid-feedback" style="font-size:12px;">
-      Passwords do not match!
-    </div>
-    <div class="valid-feedback" style="font-size:12px;">
-      Passwords match ✓
-    </div>
-  </div>
-</div>
-
-                <!-- Error -->
-                <div class="alert alert-danger py-2 d-flex align-items-center gap-2"
-                     *ngIf="errorMsg" style="font-size:13px; border-radius:10px;">
-                  <i class="bi bi-exclamation-circle"></i> {{ errorMsg }}
-                </div>
-
-                <!-- Success -->
-                <div class="alert alert-success py-2 d-flex align-items-center gap-2"
-                     *ngIf="successMsg" style="font-size:13px; border-radius:10px;">
-                  <i class="bi bi-check-circle"></i> {{ successMsg }}
-                </div>
-
-                <!-- Submit -->
-                <button type="submit" class="btn btn-primary w-100 py-2 mt-2"
-                        [disabled]="loading || (confirmPassword && password !== confirmPassword)">
-                  {{ loading ? 'Creating...' : 'Create Account' }}
-                </button>
-
-              </form>
-            </div>
-
+    <!-- Left Panel -->
+    <div class="auth-left">
+      <a routerLink="/" class="auth-brand">
+        <div class="auth-brand-icon"><i class="bi bi-bag-heart-fill"></i></div>
+        <span>CapShop</span>
+      </a>
+      <div class="auth-left-content">
+        <h2 class="auth-left-title">Join CapShop!</h2>
+        <p class="auth-left-sub">Create your free account and start shopping today.</p>
+        <div class="auth-features">
+          <div class="auth-feature">
+            <div class="auth-feature-icon"><i class="bi bi-gift"></i></div>
+            <span>Free account forever</span>
+          </div>
+          <div class="auth-feature">
+            <div class="auth-feature-icon"><i class="bi bi-tag"></i></div>
+            <span>Exclusive member deals</span>
+          </div>
+          <div class="auth-feature">
+            <div class="auth-feature-icon"><i class="bi bi-lightning"></i></div>
+            <span>Fast & secure checkout</span>
+          </div>
+          <div class="auth-feature">
+            <div class="auth-feature-icon"><i class="bi bi-geo-alt"></i></div>
+            <span>Real-time order tracking</span>
           </div>
         </div>
       </div>
+      <div class="auth-left-footer">Trusted by 50,000+ shoppers</div>
     </div>
+
+    <!-- Right Panel -->
+    <div class="auth-right">
+      <div class="auth-form-wrap">
+        <div class="auth-form-header">
+          <h3 class="auth-form-title">Create Account</h3>
+          <p class="auth-form-sub">
+            Already have an account?
+            <a routerLink="/login" class="auth-link">Sign In</a>
+          </p>
+        </div>
+
+        <form (ngSubmit)="onRegister()" class="auth-form">
+
+          <div class="row g-3">
+            <div class="col-6">
+              <label class="form-label">First Name</label>
+              <input type="text" class="form-control"
+                     [(ngModel)]="firstName" name="firstName"
+                     placeholder="John" required />
+            </div>
+            <div class="col-6">
+              <label class="form-label">Last Name</label>
+              <input type="text" class="form-control"
+                     [(ngModel)]="lastName" name="lastName"
+                     placeholder="Doe" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-envelope input-icon"></i>
+              <input type="email" class="form-control input-with-icon"
+                     [(ngModel)]="email" name="email"
+                     placeholder="you@example.com" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock"></i></span>
+              <input [type]="showPassword ? 'text' : 'password'" class="form-control"
+                     [(ngModel)]="password" name="password"
+                     placeholder="Min 6 characters" required />
+              <button class="btn btn-outline-secondary" type="button"
+                      (click)="showPassword = !showPassword">
+                <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Confirm Password</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+              <input [type]="showConfirmPassword ? 'text' : 'password'" class="form-control"
+                     [(ngModel)]="confirmPassword" name="confirmPassword"
+                     placeholder="Re-enter password" required
+                     [class.is-invalid]="confirmPassword && password !== confirmPassword"
+                     [class.is-valid]="confirmPassword && password === confirmPassword" />
+              <button class="btn btn-outline-secondary" type="button"
+                      (click)="showConfirmPassword = !showConfirmPassword">
+                <i class="bi" [class.bi-eye]="!showConfirmPassword" [class.bi-eye-slash]="showConfirmPassword"></i>
+              </button>
+              <div class="invalid-feedback">Passwords do not match!</div>
+              <div class="valid-feedback">Passwords match ✓</div>
+            </div>
+          </div>
+
+          <div class="alert alert-danger" *ngIf="errorMsg">
+            <i class="bi bi-exclamation-circle me-2"></i>{{ errorMsg }}
+          </div>
+          <div class="alert alert-success" *ngIf="successMsg">
+            <i class="bi bi-check-circle me-2"></i>{{ successMsg }}
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 auth-submit"
+                  [disabled]="loading || (confirmPassword && password !== confirmPassword)">
+            <span *ngIf="!loading"><i class="bi bi-person-plus me-2"></i>Create Account</span>
+            <span *ngIf="loading"><span class="spinner-border spinner-border-sm me-2"></span>Creating...</span>
+          </button>
+
+        </form>
+      </div>
+    </div>
+
   </div>
 </div>

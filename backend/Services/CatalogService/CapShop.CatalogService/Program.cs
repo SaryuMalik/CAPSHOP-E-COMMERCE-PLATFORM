@@ -59,6 +59,13 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Auto Migration + Seed
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+    db.Database.Migrate();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

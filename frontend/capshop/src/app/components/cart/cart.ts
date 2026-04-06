@@ -1,9 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../services/cart.service';
-import { OrderService } from '../../services/order.service';
 import { CartItem } from '../../models/cart.model';
 
 @Component({
@@ -15,20 +14,14 @@ import { CartItem } from '../../models/cart.model';
 export class Cart implements OnInit {
   cartItems: CartItem[] = [];
   loading = true;
-  placing = false;
-  shippingAddress = '';
-  successMsg = '';
-  errorMsg = '';
 
   constructor(
     private cartService: CartService,
-    private orderService: OrderService,
+    private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
 
-  ngOnInit() {
-    this.loadCart();
-  }
+  ngOnInit() { this.loadCart(); }
 
   loadCart() {
     this.loading = true;
@@ -48,24 +41,27 @@ export class Cart implements OnInit {
   }
 
   getTotal(): number {
-    return this.cartItems.reduce((sum, item) =>
-      sum + (item.productPrice * item.quantity), 0);
+    return this.cartItems.reduce((s, i) => s + i.productPrice * i.quantity, 0);
   }
 
-  getProductEmoji(name: string): string {
+  getShipping(): number { return this.getTotal() >= 499 ? 0 : 49; }
+  getGrandTotal(): number { return this.getTotal() + this.getShipping(); }
+
+  getEmoji(name: string): string {
     const n = name.toLowerCase();
     if (n.includes('phone') || n.includes('iphone')) return '📱';
-    if (n.includes('laptop') || n.includes('computer')) return '💻';
+    if (n.includes('laptop') || n.includes('macbook')) return '💻';
     if (n.includes('book')) return '📚';
-    if (n.includes('shirt') || n.includes('cloth')) return '👕';
+    if (n.includes('shirt') || n.includes('cloth') || n.includes('hoodie')) return '👕';
+    if (n.includes('shoe') || n.includes('nike')) return '👟';
+    if (n.includes('watch')) return '⌚';
+    if (n.includes('headphone') || n.includes('sony')) return '🎧';
     return '📦';
   }
 
   removeItem(productId: number) {
     this.cartService.removeFromCart(productId).subscribe({
-      next: () => {
-        this.loadCart();
-      }
+      next: () => this.loadCart()
     });
   }
 
@@ -78,48 +74,8 @@ export class Cart implements OnInit {
       }
     });
   }
-  getEmoji(name: string): string {
-  const n = name.toLowerCase();
-  if (n.includes('phone') || n.includes('iphone')) return '📱';
-  if (n.includes('laptop') || n.includes('computer')) return '💻';
-  if (n.includes('book')) return '📚';
-  if (n.includes('shirt') || n.includes('cloth')) return '👕';
-  return '📦';
-}
 
-  placeOrder() {
-    if (!this.shippingAddress.trim()) {
-      this.errorMsg = 'Please enter shipping address!';
-      this.cdr.detectChanges();
-      return;
-    }
-
-    this.placing = true;
-    this.errorMsg = '';
-    this.cdr.detectChanges();
-
-    const orderData = {
-      shippingAddress: this.shippingAddress,
-      items: this.cartItems.map(item => ({
-        productId: item.productId,
-        productName: item.productName,
-        price: item.productPrice,
-        quantity: item.quantity
-      }))
-    };
-
-    this.orderService.placeOrder(orderData).subscribe({
-      next: () => {
-        this.placing = false;
-        this.successMsg = 'Order placed successfully! 🎉';
-        this.clearCart();
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.placing = false;
-        this.errorMsg = 'Failed to place order. Try again!';
-        this.cdr.detectChanges();
-      }
-    });
+  proceedToCheckout() {
+    this.router.navigate(['/checkout']);
   }
 }
