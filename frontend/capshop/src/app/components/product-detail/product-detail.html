@@ -8,8 +8,9 @@
     </div>
 
     <div *ngIf="!loading && product">
+
       <!-- Breadcrumb -->
-      <nav class="mb-4">
+      <nav class="mb-5">
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a routerLink="/" class="text-primary">Home</a></li>
           <li class="breadcrumb-item"><a routerLink="/products" class="text-primary">Products</a></li>
@@ -19,62 +20,78 @@
 
       <div class="row g-5 align-items-start">
 
-        <!-- Image -->
+        <!-- ── Image ── -->
         <div class="col-md-5">
-          <div class="detail-img-card card overflow-hidden">
-            <img [src]="product.imageUrl || 'https://placehold.co/500x400/f1f5f9/94a3b8?text=Product'"
+          <div class="detail-img-wrap">
+            <img [src]="product.imageUrl || 'https://placehold.co/600x500/f1f5f9/94a3b8?text=No+Image'"
                  [alt]="product.name" class="detail-img" />
-            <div class="detail-img-badge" *ngIf="product.stock > 0">
+
+            <!-- Stock ribbon -->
+            <div class="stock-ribbon stock-ribbon-in" *ngIf="product.stock > 10">
               <i class="bi bi-check-circle-fill me-1"></i>In Stock
+            </div>
+            <div class="stock-ribbon stock-ribbon-low" *ngIf="product.stock > 0 && product.stock <= 10">
+              <i class="bi bi-exclamation-circle-fill me-1"></i>Only {{ product.stock }} left
+            </div>
+            <div class="stock-ribbon stock-ribbon-out" *ngIf="product.stock === 0">
+              <i class="bi bi-x-circle-fill me-1"></i>Out of Stock
             </div>
           </div>
         </div>
 
-        <!-- Info -->
+        <!-- ── Info ── -->
         <div class="col-md-7">
-          <span class="detail-category-badge">{{ product.categoryName }}</span>
 
+          <!-- Category -->
+          <span class="detail-category">{{ product.categoryName }}</span>
+
+          <!-- Name -->
           <h1 class="detail-title">{{ product.name }}</h1>
 
-          <div class="detail-rating">
-            <div class="stars">
-              <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-              <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-              <i class="bi bi-star-fill"></i>
-            </div>
-            <span class="rating-count">4.9 (128 reviews)</span>
-          </div>
-
+          <!-- Price -->
           <div class="detail-price-row">
-            <span class="detail-price">₹{{ product.price }}</span>
-            <span class="detail-price-original">₹{{ (product.price * 1.2) | number:'1.0-0' }}</span>
-            <span class="detail-discount-badge">20% OFF</span>
+            <span class="detail-price">₹{{ product.price | number:'1.0-0' }}</span>
           </div>
 
-          <p class="detail-description">{{ product.description }}</p>
+          <!-- Description -->
+          <p class="detail-desc">{{ product.description }}</p>
 
           <div class="detail-divider"></div>
 
-          <!-- Stock -->
-          <div class="detail-stock">
-            <span class="stock-label">Availability:</span>
-            <span class="stock-in" *ngIf="product.stock > 0">
-              <i class="bi bi-check-circle-fill"></i>
-              In Stock ({{ product.stock }} units)
-            </span>
-            <span class="stock-out" *ngIf="product.stock === 0">
-              <i class="bi bi-x-circle-fill"></i> Out of Stock
-            </span>
+          <!-- Stock bar -->
+          <div class="stock-bar-wrap" *ngIf="product.stock > 0">
+            <div class="stock-bar-label">
+              <span>Stock</span>
+              <span class="stock-bar-count"
+                    [class.text-success]="product.stock > 10"
+                    [class.text-warning]="product.stock <= 10 && product.stock > 0">
+                {{ product.stock }} units available
+              </span>
+            </div>
+            <div class="stock-bar">
+              <div class="stock-bar-fill"
+                   [style.width.%]="getStockPercent()"
+                   [class.fill-high]="product.stock > 10"
+                   [class.fill-low]="product.stock <= 10">
+              </div>
+            </div>
+          </div>
+
+          <!-- Out of stock message -->
+          <div class="out-of-stock-msg" *ngIf="product.stock === 0">
+            <i class="bi bi-x-circle-fill me-2"></i>
+            This product is currently out of stock
           </div>
 
           <!-- Quantity -->
           <div class="detail-qty" *ngIf="product.stock > 0">
-            <span class="qty-label">Quantity:</span>
+            <span class="qty-label">Quantity</span>
             <div class="qty-control">
-              <button class="qty-btn" (click)="decreaseQty()">−</button>
+              <button class="qty-btn" (click)="decreaseQty()" [disabled]="quantity <= 1">−</button>
               <span class="qty-value">{{ quantity }}</span>
-              <button class="qty-btn" (click)="increaseQty()">+</button>
+              <button class="qty-btn" (click)="increaseQty()" [disabled]="quantity >= product.stock">+</button>
             </div>
+            <span class="qty-max" *ngIf="quantity >= product.stock">Max</span>
           </div>
 
           <!-- Actions -->
@@ -84,39 +101,43 @@
               <i class="bi bi-cart-plus me-2"></i>
               {{ product.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
             </button>
-            <button class="btn btn-outline-secondary btn-lg" (click)="goBack()">
-              <i class="bi bi-arrow-left me-1"></i>Back
+            <button class="btn btn-outline-secondary btn-lg px-4" (click)="goBack()">
+              <i class="bi bi-arrow-left"></i>
             </button>
           </div>
 
-          <div class="alert alert-success mt-3" *ngIf="toastMsg">
-            <i class="bi bi-check-circle me-2"></i>{{ toastMsg }}
+          <!-- Success toast -->
+          <div class="add-success" *ngIf="toastMsg">
+            <i class="bi bi-check-circle-fill me-2"></i>{{ toastMsg }}
           </div>
 
           <!-- Perks -->
           <div class="detail-perks">
             <div class="perk">
-              <div class="perk-icon"><i class="bi bi-truck"></i></div>
+              <i class="bi bi-truck perk-icon"></i>
               <div>
                 <div class="perk-title">Free Delivery</div>
                 <div class="perk-sub">Above ₹499</div>
               </div>
             </div>
+            <div class="perk-divider"></div>
             <div class="perk">
-              <div class="perk-icon"><i class="bi bi-arrow-counterclockwise"></i></div>
+              <i class="bi bi-arrow-counterclockwise perk-icon"></i>
               <div>
                 <div class="perk-title">Easy Returns</div>
                 <div class="perk-sub">30 days</div>
               </div>
             </div>
+            <div class="perk-divider"></div>
             <div class="perk">
-              <div class="perk-icon"><i class="bi bi-shield-check"></i></div>
+              <i class="bi bi-shield-check perk-icon"></i>
               <div>
                 <div class="perk-title">Secure Pay</div>
                 <div class="perk-sub">100% safe</div>
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>
@@ -125,7 +146,7 @@
     <div class="empty-state" *ngIf="!loading && !product">
       <div class="icon">😔</div>
       <h4>Product not found</h4>
-      <p>This product may have been removed or doesn't exist.</p>
+      <p>This product may have been removed.</p>
       <a routerLink="/products" class="btn btn-primary">Back to Products</a>
     </div>
 

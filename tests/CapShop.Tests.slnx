@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="../backend/Services/AuthService/CapShop.AuthService/CapShop.AuthService.csproj" />
+  <Project Path="../backend/Services/CatalogService/CapShop.CatalogService/CapShop.CatalogService.csproj" />
+  <Project Path="../backend/Services/OrderService/CapShop.OrderService/CapShop.OrderService.csproj" />
+  <Project Path="../backend/Shared/CapShop.Shared/CapShop.Shared.csproj" />
+  <Project Path="CapShop.AuthService.Tests/CapShop.AuthService.Tests.csproj" />
+  <Project Path="CapShop.CatalogService.Tests/CapShop.CatalogService.Tests.csproj" />
+  <Project Path="CapShop.OrderService.Tests/CapShop.OrderService.Tests.csproj" />
+</Solution>

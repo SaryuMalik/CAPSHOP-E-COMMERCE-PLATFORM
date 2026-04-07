@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore CapShop/tests/CapShop.Tests.slnx
+
+      - name: Build
+        run: dotnet build CapShop/tests/CapShop.Tests.slnx --no-restore --configuration Release
+
+      - name: Run tests
+        run: dotnet test CapShop/tests/CapShop.Tests.slnx --no-build --configuration Release --verbosity normal
+
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: CapShop/frontend/capshop
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: CapShop/frontend/capshop/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build]
+    defaults:
+      run:
+        working-directory: CapShop/backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build all images
+        run: docker compose build
+        env:
+          SA_PASSWORD: "CI_Placeholder@123"
+          JWT_KEY: "CI_Placeholder_Key_Must_Be_32_Chars!!"
+          JWT_ISSUER: "CapShop"
+          JWT_AUDIENCE: "CapShopUsers"
+          JWT_EXPIRY_MINUTES: "60"
+          EMAIL_FROM: "ci@example.com"
+          EMAIL_PASSWORD: "placeholder"
+          EMAIL_HOST: "smtp.example.com"
+          EMAIL_PORT: "587"
+          RABBITMQ_USER: "guest"
+          RABBITMQ_PASS: "guest"

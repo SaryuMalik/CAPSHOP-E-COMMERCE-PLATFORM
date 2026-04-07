@@ -90,4 +90,10 @@ export class ProductDetail implements OnInit {
   goBack() {
     this.router.navigate(['/products']);
   }
+
+  getStockPercent(): number {
+    if (!this.product) return 0;
+    // Cap at 100 units as "full stock" for visual bar
+    return Math.min((this.product.stock / 100) * 100, 100);
+  }
 }
