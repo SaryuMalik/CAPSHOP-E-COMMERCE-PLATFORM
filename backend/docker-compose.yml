@@ -61,6 +61,10 @@ services:
       - Email__Password=${EMAIL_PASSWORD}
       - Email__Host=${EMAIL_HOST}
       - Email__Port=${EMAIL_PORT}
+      - Admin__Email=${ADMIN_EMAIL}
+      - Admin__Password=${ADMIN_PASSWORD}
+      - Admin__FirstName=${ADMIN_FIRST_NAME}
+      - Admin__LastName=${ADMIN_LAST_NAME}
     ports:
       - "5014:80"
     depends_on:

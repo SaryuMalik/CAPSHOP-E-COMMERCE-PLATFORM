@@ -11,9 +11,11 @@
 }
 .detail-img {
   width: 100%;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
+  max-height: 380px;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
   display: block;
+  padding: 16px;
 }
 
 /* Stock ribbon */

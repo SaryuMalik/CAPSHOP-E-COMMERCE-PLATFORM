@@ -62,11 +62,33 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 
-// Auto Migration
+// Auto Migration + Admin Seed
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
     db.Database.Migrate();
+
+    var adminEmail    = app.Configuration["Admin:Email"];
+    var adminPassword = app.Configuration["Admin:Password"];
+    var adminFirst    = app.Configuration["Admin:FirstName"] ?? "Admin";
+    var adminLast     = app.Configuration["Admin:LastName"]  ?? "User";
+
+    if (!string.IsNullOrEmpty(adminEmail) && !string.IsNullOrEmpty(adminPassword)
+        && !db.Users.Any(u => u.Email == adminEmail))
+    {
+        db.Users.Add(new CapShop.AuthService.Domain.Entities.User
+        {
+            Id        = Guid.NewGuid(),
+            Email     = adminEmail,
+            Password  = BCrypt.Net.BCrypt.HashPassword(adminPassword),
+            FirstName = adminFirst,
+            LastName  = adminLast,
+            Role      = "Admin",
+            CreatedAt = DateTime.UtcNow
+        });
+        db.SaveChanges();
+        Console.WriteLine("✅ Admin user seeded.");
+    }
 }
 
 if (app.Environment.IsDevelopment())
