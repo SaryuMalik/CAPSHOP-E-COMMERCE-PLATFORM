@@ -20,20 +20,20 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Restore dependencies
-        run: dotnet restore CapShop/tests/CapShop.Tests.slnx
+        run: dotnet restore tests/CapShop.Tests.slnx
 
       - name: Build
-        run: dotnet build CapShop/tests/CapShop.Tests.slnx --no-restore --configuration Release
+        run: dotnet build tests/CapShop.Tests.slnx --no-restore --configuration Release
 
       - name: Run tests
-        run: dotnet test CapShop/tests/CapShop.Tests.slnx --no-build --configuration Release --verbosity normal
+        run: dotnet test tests/CapShop.Tests.slnx --no-build --configuration Release --verbosity normal
 
   frontend-build:
     name: Frontend Build
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: CapShop/frontend/capshop
+        working-directory: frontend/capshop
 
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: CapShop/frontend/capshop/package-lock.json
+          cache-dependency-path: frontend/capshop/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -57,7 +57,7 @@ jobs:
     needs: [backend-tests, frontend-build]
     defaults:
       run:
-        working-directory: CapShop/backend
+        working-directory: backend
 
     steps:
       - uses: actions/checkout@v4
