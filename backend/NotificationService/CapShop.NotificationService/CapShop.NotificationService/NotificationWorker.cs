@@ -40,13 +40,6 @@ public class NotificationWorker : BackgroundService
                 _channel = await _connection.CreateChannelAsync();
 
                 await _channel.QueueDeclareAsync(
-                    queue: "order-placed",
-                    durable: true,
-                    exclusive: false,
-                    autoDelete: false
-                );
-
-                await _channel.QueueDeclareAsync(
                     queue: "order-status-changed",
                     durable: true,
                     exclusive: false,
@@ -70,22 +63,6 @@ public class NotificationWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var orderPlacedConsumer = new AsyncEventingBasicConsumer(_channel!);
-        orderPlacedConsumer.ReceivedAsync += async (model, ea) =>
-        {
-            var body = ea.Body.ToArray();
-            var message = JsonSerializer.Deserialize<OrderPlacedMessage>(
-                Encoding.UTF8.GetString(body)
-            );
-
-            if (message != null)
-            {
-                Console.WriteLine($"📦 Order placed received: #{message.OrderId}");
-                await SendOrderConfirmationEmail(message);
-                await _channel!.BasicAckAsync(ea.DeliveryTag, false);
-            }
-        };
-
         var statusChangedConsumer = new AsyncEventingBasicConsumer(_channel!);
         statusChangedConsumer.ReceivedAsync += async (model, ea) =>
         {
@@ -103,12 +80,6 @@ public class NotificationWorker : BackgroundService
         };
 
         await _channel!.BasicConsumeAsync(
-            queue: "order-placed",
-            autoAck: false,
-            consumer: orderPlacedConsumer
-        );
-
-        await _channel!.BasicConsumeAsync(
             queue: "order-status-changed",
             autoAck: false,
             consumer: statusChangedConsumer
@@ -119,36 +90,6 @@ public class NotificationWorker : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             await Task.Delay(1000, stoppingToken);
-        }
-    }
-
-    private async Task SendOrderConfirmationEmail(OrderPlacedMessage message)
-    {
-        try
-        {
-            await SendEmailAsync(
-                message.UserEmail,
-                $"Order Confirmed! #{message.OrderId} 🎉",
-                $@"
-                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
-                    <h2 style='color: #6c63ff;'>Order Confirmed! 🎉</h2>
-                    <p>Hi <strong>{message.UserName}</strong>!</p>
-                    <p>Your order <strong>#{message.OrderId}</strong> has been placed successfully.</p>
-                    <p><strong>Total Amount:</strong> ₹{message.TotalAmount}</p>
-                    <p><strong>Shipping Address:</strong> {message.ShippingAddress}</p>
-                    <a href='http://localhost:4200/orders'
-                       style='background:#6c63ff; color:white; padding:12px 24px;
-                              text-decoration:none; border-radius:8px; display:inline-block;'>
-                       View Order →
-                    </a>
-                    <p style='color:#888; font-size:12px;'>Thank you for shopping at CapShop!</p>
-                </div>"
-            );
-            Console.WriteLine($"✅ Order confirmation email sent to {message.UserEmail}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Email failed: {ex.Message}");
         }
     }
 
