@@ -1,7 +1,10 @@
+using CapShop.OrderService.Application.DTOs;
+using CapShop.OrderService.Application.Interfaces;
 using CapShop.OrderService.Controllers;
 using CapShop.OrderService.Domain.Entities;
+using CapShop.OrderService.Domain.Interfaces;
 using CapShop.OrderService.Infrastructure.Persistence;
-using CapShop.OrderService.Services;
+using CapShop.OrderService.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +17,7 @@ namespace CapShop.OrderService.Tests;
 public class OrderControllerTests
 {
     private OrderDbContext _db;
-    private Mock<IRabbitMQService> _rabbitMock;
+    private Mock<IMessagePublisher> _publisherMock;
     private OrderController _controller;
     private Guid _userId;
 
@@ -25,19 +28,21 @@ public class OrderControllerTests
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        _db          = new OrderDbContext(options);
-        _rabbitMock  = new Mock<IRabbitMQService>();
-        _controller  = new OrderController(_db, _rabbitMock.Object);
-        _userId      = Guid.NewGuid();
+        _db = new OrderDbContext(options);
+        _publisherMock = new Mock<IMessagePublisher>();
 
-        // Simulate authenticated user
+        IOrderRepository repo = new OrderRepository(_db);
+        var orderService = new CapShop.OrderService.Application.Services.OrderService(repo, _publisherMock.Object);
+        _controller = new OrderController(orderService);
+        _userId = Guid.NewGuid();
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, _userId.ToString()),
-            new(ClaimTypes.Email,          "test@test.com"),
-            new(ClaimTypes.GivenName,      "Test")
+            new(ClaimTypes.Email, "test@test.com"),
+            new(ClaimTypes.GivenName, "Test")
         };
-        var identity  = new ClaimsIdentity(claims, "Test");
+        var identity = new ClaimsIdentity(claims, "Test");
         var principal = new ClaimsPrincipal(identity);
 
         _controller.ControllerContext = new ControllerContext
@@ -49,12 +54,9 @@ public class OrderControllerTests
     [TearDown]
     public void TearDown() => _db.Dispose();
 
-    // ── PlaceOrder Tests ────────────────────────────────────────────
-
     [Test]
     public async Task PlaceOrder_WithValidData_ReturnsOkWithOrderId()
     {
-        // Arrange
         var dto = new PlaceOrderDto
         {
             ShippingAddress = "123 Test Street, Mumbai",
@@ -64,10 +66,8 @@ public class OrderControllerTests
             }
         };
 
-        // Act
         var result = await _controller.PlaceOrder(dto) as OkObjectResult;
 
-        // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.StatusCode, Is.EqualTo(200));
     }
@@ -75,7 +75,6 @@ public class OrderControllerTests
     [Test]
     public async Task PlaceOrder_SavesOrderToDatabase()
     {
-        // Arrange
         var dto = new PlaceOrderDto
         {
             ShippingAddress = "456 Test Ave, Delhi",
@@ -85,10 +84,8 @@ public class OrderControllerTests
             }
         };
 
-        // Act
         await _controller.PlaceOrder(dto);
 
-        // Assert
         var order = await _db.Orders.Include(o => o.Items).FirstOrDefaultAsync();
         Assert.That(order, Is.Not.Null);
         Assert.That(order!.UserId, Is.EqualTo(_userId));
@@ -99,7 +96,6 @@ public class OrderControllerTests
     [Test]
     public async Task PlaceOrder_CalculatesTotalCorrectly()
     {
-        // Arrange
         var dto = new PlaceOrderDto
         {
             ShippingAddress = "Test Address",
@@ -110,10 +106,8 @@ public class OrderControllerTests
             }
         };
 
-        // Act
         await _controller.PlaceOrder(dto);
 
-        // Assert — 100*2 + 50*3 = 350
         var order = await _db.Orders.FirstOrDefaultAsync();
         Assert.That(order!.TotalAmount, Is.EqualTo(350m));
     }
@@ -121,24 +115,20 @@ public class OrderControllerTests
     [Test]
     public async Task PlaceOrder_WithEmptyItems_ReturnsBadRequest()
     {
-        // Arrange
         var dto = new PlaceOrderDto
         {
             ShippingAddress = "Test Address",
             Items = new List<OrderItemDto>()
         };
 
-        // Act
         var result = await _controller.PlaceOrder(dto);
 
-        // Assert
         Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
     }
 
     [Test]
     public async Task PlaceOrder_SetsDefaultStatusToPending()
     {
-        // Arrange
         var dto = new PlaceOrderDto
         {
             ShippingAddress = "Test",
@@ -148,62 +138,44 @@ public class OrderControllerTests
             }
         };
 
-        // Act
         await _controller.PlaceOrder(dto);
 
-        // Assert
         var order = await _db.Orders.FirstOrDefaultAsync();
         Assert.That(order!.Status, Is.EqualTo("Pending"));
         Assert.That(order.PaymentStatus, Is.EqualTo("Unpaid"));
     }
 
-    // ── GetMyOrders Tests ───────────────────────────────────────────
-
     [Test]
     public async Task GetMyOrders_ReturnsOnlyCurrentUserOrders()
     {
-        // Arrange — seed orders for two different users
         var otherUserId = Guid.NewGuid();
-
         _db.Orders.AddRange(
-            new Order { UserId = _userId,      UserEmail = "test@test.com",  ShippingAddress = "A", TotalAmount = 100 },
-            new Order { UserId = _userId,      UserEmail = "test@test.com",  ShippingAddress = "B", TotalAmount = 200 },
-            new Order { UserId = otherUserId,  UserEmail = "other@test.com", ShippingAddress = "C", TotalAmount = 300 }
+            new Order { UserId = _userId,     UserEmail = "test@test.com",  ShippingAddress = "A", TotalAmount = 100 },
+            new Order { UserId = _userId,     UserEmail = "test@test.com",  ShippingAddress = "B", TotalAmount = 200 },
+            new Order { UserId = otherUserId, UserEmail = "other@test.com", ShippingAddress = "C", TotalAmount = 300 }
         );
         await _db.SaveChangesAsync();
 
-        // Act
         var result = await _controller.GetMyOrders() as OkObjectResult;
 
-        // Assert
         Assert.That(result, Is.Not.Null);
-        var orders = result!.Value as IEnumerable<object>;
+        var orders = result!.Value as IEnumerable<OrderResponseDto>;
         Assert.That(orders!.Count(), Is.EqualTo(2));
     }
-
-    // ── UpdateStatus Tests ──────────────────────────────────────────
 
     [Test]
     public async Task UpdateStatus_ChangesOrderStatus()
     {
-        // Arrange
         var order = new Order
         {
-            UserId          = _userId,
-            UserEmail       = "test@test.com",
-            ShippingAddress = "Test",
-            TotalAmount     = 100,
-            Status          = "Pending"
+            UserId = _userId, UserEmail = "test@test.com",
+            ShippingAddress = "Test", TotalAmount = 100, Status = "Pending"
         };
         _db.Orders.Add(order);
         await _db.SaveChangesAsync();
 
-        var dto = new UpdateStatusDto { Status = "Delivered", PaymentStatus = "Paid" };
+        await _controller.UpdateStatus(order.Id, new UpdateStatusDto { Status = "Delivered", PaymentStatus = "Paid" });
 
-        // Act
-        await _controller.UpdateStatus(order.Id, dto);
-
-        // Assert
         var updated = await _db.Orders.FindAsync(order.Id);
         Assert.That(updated!.Status, Is.EqualTo("Delivered"));
         Assert.That(updated.PaymentStatus, Is.EqualTo("Paid"));
@@ -212,10 +184,7 @@ public class OrderControllerTests
     [Test]
     public async Task UpdateStatus_WithInvalidId_ReturnsNotFound()
     {
-        // Act
         var result = await _controller.UpdateStatus(9999, new UpdateStatusDto { Status = "Delivered" });
-
-        // Assert
         Assert.That(result, Is.InstanceOf<NotFoundResult>());
     }
 }
