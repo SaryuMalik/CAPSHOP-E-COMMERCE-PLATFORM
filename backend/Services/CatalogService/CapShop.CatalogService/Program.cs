@@ -1,4 +1,7 @@
+using CapShop.CatalogService.Domain.Interfaces;
 using CapShop.CatalogService.Infrastructure.Persistence;
+using CapShop.CatalogService.Infrastructure.Repositories;
+using CapShop.CatalogService.Saga;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -17,6 +20,11 @@ builder.Services.AddControllers()
 
 builder.Services.AddDbContext<CatalogDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<IInventoryRepository, ProductRepository>();
+
+// Saga participant
+builder.Services.AddHostedService<InventorySagaConsumer>();
 
 builder.Services.AddCors(options =>
 {
