@@ -5,6 +5,7 @@ EXPOSE 80
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ["NotificationService/CapShop.NotificationService/CapShop.NotificationService/CapShop.NotificationService.csproj", "NotificationService/CapShop.NotificationService/CapShop.NotificationService/"]
+COPY ["Shared/CapShop.Shared/CapShop.Shared.csproj", "Shared/CapShop.Shared/"]
 RUN dotnet restore "NotificationService/CapShop.NotificationService/CapShop.NotificationService/CapShop.NotificationService.csproj"
 COPY . .
 WORKDIR "/src/NotificationService/CapShop.NotificationService/CapShop.NotificationService"

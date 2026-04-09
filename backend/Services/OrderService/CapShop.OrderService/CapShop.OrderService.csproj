@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Shared\CapShop.Shared\CapShop.Shared.csproj" />
+    <ProjectReference Include="../../../Shared/CapShop.Shared/CapShop.Shared.csproj" />
   </ItemGroup>
 
 </Project>

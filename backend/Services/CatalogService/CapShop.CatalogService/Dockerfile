@@ -5,6 +5,7 @@ EXPOSE 80
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ["Services/CatalogService/CapShop.CatalogService/CapShop.CatalogService.csproj", "Services/CatalogService/CapShop.CatalogService/"]
+COPY ["Shared/CapShop.Shared/CapShop.Shared.csproj", "Shared/CapShop.Shared/"]
 RUN dotnet restore "Services/CatalogService/CapShop.CatalogService/CapShop.CatalogService.csproj"
 COPY . .
 WORKDIR "/src/Services/CatalogService/CapShop.CatalogService"
