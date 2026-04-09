@@ -17,6 +17,7 @@ export class ProductDetail implements OnInit {
   loading = true;
   quantity = 1;
   toastMsg = '';
+  maxStock = 0; // store original stock for bar calculation
 
   constructor(
     private route: ActivatedRoute,
@@ -30,18 +31,23 @@ export class ProductDetail implements OnInit {
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.productService.getProductById(+id).subscribe({
-        next: (product) => {
-          this.product = { ...product };  // ✅ Spread
-          this.loading = false;
-          this.cdr.detectChanges();       // ✅ Force update
-        },
-        error: () => {
-          this.loading = false;
-          this.cdr.detectChanges();
-        }
-      });
+      this.loadProduct(+id);
     }
+  }
+
+  loadProduct(id: number) {
+    this.productService.getProductById(id).subscribe({
+      next: (product) => {
+        this.product = { ...product };
+        if (this.maxStock === 0) this.maxStock = product.stock; // set once on first load
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   increaseQty() {
@@ -61,16 +67,19 @@ export class ProductDetail implements OnInit {
     }
 
     if (!this.product) return;
+    const productId = this.product.id;
 
-    this.cartService.addToCart(this.product.id, this.quantity).subscribe({
+    this.cartService.addToCart(productId, this.quantity).subscribe({
       next: () => {
         this.showToast('✅ Cart mein add ho gaya!');
         this.cartService.getCart().subscribe({
           next: (cart: any) => {
             this.cartService.updateCartCount(cart.items?.length || 0);
-            this.cdr.detectChanges();   // ✅ Force update
+            this.cdr.detectChanges();
           }
         });
+        // refresh product to get latest stock from backend
+        this.loadProduct(productId);
       },
       error: () => {
         this.showToast('❌ Error! Dobara try karo.');
@@ -92,8 +101,7 @@ export class ProductDetail implements OnInit {
   }
 
   getStockPercent(): number {
-    if (!this.product) return 0;
-    // Cap at 100 units as "full stock" for visual bar
-    return Math.min((this.product.stock / 100) * 100, 100);
+    if (!this.product || this.maxStock === 0) return 0;
+    return Math.min((this.product.stock / this.maxStock) * 100, 100);
   }
 }
