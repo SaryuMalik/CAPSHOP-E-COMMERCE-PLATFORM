@@ -18,7 +18,7 @@ public class EmailService : IEmailService
     public async Task SendEmailAsync(string to, string subject, string body)
     {
         var email = new MimeMessage();
-        email.From.Add(MailboxAddress.Parse(_config["Email:From"]));
+        email.From.Add(MailboxAddress.Parse(_config["Email:From"] ?? string.Empty));
         email.To.Add(MailboxAddress.Parse(to));
         email.Subject = subject;
         email.Body = new TextPart("html") { Text = body };
@@ -39,7 +39,7 @@ public class EmailService : IEmailService
     public async Task SendOtpEmailAsync(string toEmail, string otp, string firstName)
     {
         var email = new MimeMessage();
-        email.From.Add(MailboxAddress.Parse(_config["Email:From"]));
+        email.From.Add(MailboxAddress.Parse(_config["Email:From"] ?? string.Empty));
         email.To.Add(MailboxAddress.Parse(toEmail));
         email.Subject = "CapShop - Password Reset OTP";
 
