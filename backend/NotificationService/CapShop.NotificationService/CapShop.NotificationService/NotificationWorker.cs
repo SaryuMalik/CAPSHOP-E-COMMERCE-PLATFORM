@@ -46,6 +46,13 @@ public class NotificationWorker : BackgroundService
                     autoDelete: false
                 );
 
+                await _channel.QueueDeclareAsync(
+                    queue: "order-placed",
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false
+                );
+
                 Console.WriteLine("✅ NotificationService connected to RabbitMQ!");
                 break;
             }
@@ -63,6 +70,30 @@ public class NotificationWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Order placed consumer — confirmation email
+        var orderPlacedConsumer = new AsyncEventingBasicConsumer(_channel!);
+        orderPlacedConsumer.ReceivedAsync += async (model, ea) =>
+        {
+            var body = ea.Body.ToArray();
+            var message = JsonSerializer.Deserialize<OrderPlacedMessage>(
+                Encoding.UTF8.GetString(body)
+            );
+
+            if (message != null)
+            {
+                Console.WriteLine($"📦 Order placed: #{message.OrderId} by {message.UserEmail}");
+                await SendOrderConfirmationEmail(message);
+            }
+            await _channel!.BasicAckAsync(ea.DeliveryTag, false);
+        };
+
+        await _channel!.BasicConsumeAsync(
+            queue: "order-placed",
+            autoAck: false,
+            consumer: orderPlacedConsumer
+        );
+
+        // Order status changed consumer
         var statusChangedConsumer = new AsyncEventingBasicConsumer(_channel!);
         statusChangedConsumer.ReceivedAsync += async (model, ea) =>
         {
@@ -90,6 +121,49 @@ public class NotificationWorker : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             await Task.Delay(1000, stoppingToken);
+        }
+    }
+
+    private async Task SendOrderConfirmationEmail(OrderPlacedMessage message)
+    {
+        try
+        {
+            var itemsHtml = string.Join("", message.Items.Select(i =>
+                $"<tr><td style='padding:8px; border-bottom:1px solid #eee;'>Product #{i.ProductId}</td><td style='padding:8px; border-bottom:1px solid #eee; text-align:center;'>{i.Quantity}</td></tr>"
+            ));
+
+            await SendEmailAsync(
+                message.UserEmail,
+                $"Order #{message.OrderId} Confirmed!",
+                $@"
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+                    <h2 style='color: #6c63ff;'>Order Placed Successfully!</h2>
+                    <p>Hi <strong>{message.UserName}</strong>, your order has been placed.</p>
+                    <p><strong>Order ID:</strong> #{message.OrderId}</p>
+                    <p><strong>Total Amount:</strong> ₹{message.TotalAmount:F2}</p>
+                    <p><strong>Shipping Address:</strong> {message.ShippingAddress}</p>
+                    <table style='width:100%; border-collapse:collapse; margin-top:16px;'>
+                        <thead>
+                            <tr style='background:#6c63ff; color:white;'>
+                                <th style='padding:8px; text-align:left;'>Product</th>
+                                <th style='padding:8px;'>Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody>{itemsHtml}</tbody>
+                    </table>
+                    <br/>
+                    <a href='http://localhost:4200/orders'
+                       style='background:#6c63ff; color:white; padding:12px 24px;
+                              text-decoration:none; border-radius:8px; display:inline-block;'>
+                       View Order →
+                    </a>
+                </div>"
+            );
+            Console.WriteLine($"✅ Order confirmation email sent to {message.UserEmail}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Confirmation email failed: {ex.Message}");
         }
     }
 
