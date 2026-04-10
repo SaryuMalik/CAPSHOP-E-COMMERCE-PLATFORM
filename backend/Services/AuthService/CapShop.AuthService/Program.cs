@@ -97,6 +97,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();      // ✅
 }
 
+app.UseMiddleware<CapShop.AuthService.Middleware.ExceptionHandlerMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors("AllowAngular");
 app.UseAuthentication();

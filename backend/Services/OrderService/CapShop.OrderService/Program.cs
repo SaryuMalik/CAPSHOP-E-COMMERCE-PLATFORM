@@ -56,6 +56,7 @@ using (var scope = app.Services.CreateScope())
 
 if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }
 
+app.UseMiddleware<CapShop.OrderService.Middleware.ExceptionHandlerMiddleware>();
 app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();

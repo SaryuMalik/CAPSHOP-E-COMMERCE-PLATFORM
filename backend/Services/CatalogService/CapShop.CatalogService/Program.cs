@@ -80,6 +80,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<CapShop.CatalogService.Middleware.ExceptionHandlerMiddleware>();
 app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
